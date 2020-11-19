@@ -5,6 +5,9 @@ Requires:
 - bit.ly, for url shortening
 - Twitter: make sure the app is set to Read and Write access
 - Facebook: make sure the `pages_manage_posts` permission is included
+- Instagram cookies
+    - Use <https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/>
+    - Login to Instagram, then use the extension to export `cookies.txt`, and move it to this folder.
 
 To get a permanent Facebook page access token:
 

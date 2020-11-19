@@ -1,10 +1,12 @@
 import re
+import time
 import json
 import config
 import tweepy
 import requests
 import facebook
 import logging
+from http import cookiejar
 from datetime import datetime
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -52,7 +54,17 @@ def main():
     except FileNotFoundError:
         seen = set()
 
-    resp = requests.get(config.IG_URL)
+    # Instagram cookies, to prevent getting hit with a login screen
+    cj = cookiejar.MozillaCookieJar('cookies.txt')
+    cj.load()
+    for cookie in cj:
+        # set cookie expire date to 14 days from now
+        # to prevent dropping of any cookies with expires=0
+        cookie.expires = time.time() + 14 * 24 * 3600
+
+    resp = requests.get(config.IG_URL, headers={
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36'
+    }, cookies=cj)
     data = ig_data_re.search(resp.content.decode('utf8')).group(1)
     data = data.strip(';')
     data = json.loads(data)
@@ -60,7 +72,9 @@ def main():
     for edge in timeline:
         node = edge['node']
         id = node['id']
-        if id in seen: continue
+        if id in seen:
+            print('Already seen:', id)
+            continue
         logger.info('New post: {} ({})'.format(node['shortcode'], id))
 
         # Build full url
