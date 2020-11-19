@@ -10,12 +10,15 @@ from http import cookiejar
 from datetime import datetime
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+# Regex for extracting the Javascript data loaded in Instagram
 ig_data_re = re.compile('window\._sharedData = (.+)<\/script>')
+
 tw_auth = tweepy.OAuthHandler(config.TW_CONSUMER_KEY, config.TW_CONSUMER_SECRET)
 tw_auth.set_access_token(config.TW_ACCESS_TOKEN, config.TW_ACCESS_TOKEN_SECRET)
 tw_api = tweepy.API(tw_auth)
 fb_api = facebook.GraphAPI(access_token=config.FB_ACCESS_TOKEN)
 
+# Logging
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s:%(levelname)s:%(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S %Z')
@@ -49,6 +52,7 @@ def shorten(url):
 
 
 def main():
+    # Load existing list of seen IG post ids
     try:
         seen = set(json.load(open('seen.json')))
     except FileNotFoundError:
@@ -58,23 +62,30 @@ def main():
     cj = cookiejar.MozillaCookieJar('cookies.txt')
     cj.load()
     for cookie in cj:
-        # set cookie expire date to 14 days from now
+        # Set cookie expire date to 14 days from now
         # to prevent dropping of any cookies with expires=0
         cookie.expires = time.time() + 14 * 24 * 3600
 
+    # Get the Instagram profile page
+    # and extract the JSON data
     resp = requests.get(config.IG_URL, headers={
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36'
     }, cookies=cj)
     data = ig_data_re.search(resp.content.decode('utf8')).group(1)
     data = data.strip(';')
     data = json.loads(data)
+
+    # Iterate over the timeline
     timeline = data['entry_data']['ProfilePage'][0]['graphql']['user']['edge_owner_to_timeline_media']['edges']
     for edge in timeline:
+        # Check if we've already seen this post
         node = edge['node']
         id = node['id']
         if id in seen:
             print('Already seen:', id)
             continue
+
+        # Found a new post
         logger.info('New post: {} ({})'.format(node['shortcode'], id))
 
         # Build full url
@@ -95,10 +106,8 @@ def main():
         # Get caption text
         caption = node['edge_media_to_caption']['edges'][0]['node']['text']
 
-        print('='*20)
-        print('post:', post_url)
-        print('media:', fname)
-        # print('caption:', caption)
+        logger.info('Post:', post_url)
+        logger.info('Media:', fname)
 
         # Post to Facebook
         fb_api.put_object(

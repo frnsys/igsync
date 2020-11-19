@@ -1,4 +1,4 @@
-Scrapes an Instagram page and mirrors those posts on Facebook and Twitter.
+Scrapes an Instagram page and mirrors those posts on Facebook and Twitter. If you don't want to mess with services like IFTTT or Zapier you can use this instead.
 
 Requires:
 
