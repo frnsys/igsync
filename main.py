@@ -102,7 +102,7 @@ def main():
 
         # Post to Facebook
         fb_api.put_object(
-          parent_object=FB_PAGE_ID,
+          parent_object=config.FB_PAGE_ID,
           connection_name="feed",
           message=caption,
           source=media_url,
