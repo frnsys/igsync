@@ -30,7 +30,7 @@ curl "https://graph.facebook.com/v2.10/$PAGE_ID?fields=access_token&access_token
 In `config.py`:
 
 ```python
-UPDATE_INTERVAL = 60*5
+UPDATE_INTERVAL = 5 # in minutes
 
 IG_URL = '<url of instagram account to scrape>'
 
