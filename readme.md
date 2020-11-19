@@ -44,3 +44,7 @@ TW_ACCESS_TOKEN_SECRET = '<twitter access token secret>'
 
 BITLY_ACCESS_TOKEN = '<bitly access token>'
 ```
+
+---
+
+Example `systemd` service at `igsync.service`. Make sure you properly `chown` the directory for `www-data:www-data` (and `chmod -R 775` it as well)

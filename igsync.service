@@ -1,0 +1,13 @@
+[Unit]
+Description=igsync service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+Restart=always
+WorkingDirectory=/var/www/socialmedia
+ExecStart=/var/www/socialmedia/env/bin/python -u main.py
+
+[Install]
+WantedBy=multi-user.target
