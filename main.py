@@ -28,7 +28,6 @@ logger.setLevel(logging.INFO)
 
 def download(url, outfile):
     """download a file"""
-    fname = url.split('/')[-1]
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
         with open(outfile, 'wb') as f:
@@ -92,29 +91,30 @@ def main():
         post_url = 'https://www.instagram.com/p/{}/'.format(node['shortcode'])
 
         # Get attached media
+        image_url = node['display_url']
+        image_fname = '/tmp/ig_media__{}.jpg'.format(datetime.utcnow().timestamp())
+        download(image_url, image_fname)
+        fb_media_url = image_url
+
         video_url = node.get('video_url')
         if video_url:
-            fname = '/tmp/ig_media__{}.mp4'.format(datetime.utcnow().timestamp())
-            download(video_url, fname)
-            media_url = video_url
-        else:
-            image_url = node['display_url']
-            fname = '/tmp/ig_media__{}.jpg'.format(datetime.utcnow().timestamp())
-            download(image_url, fname)
-            media_url = image_url
+            # video_fname = '/tmp/ig_media__{}.mp4'.format(datetime.utcnow().timestamp())
+            # download(video_url, fname)
+            fb_media_url = video_url
 
         # Get caption text
         caption = node['edge_media_to_caption']['edges'][0]['node']['text']
 
-        logger.info('Post:', post_url)
-        logger.info('Media:', fname)
+        logger.info('Post: {}'.format(post_url))
+        logger.info('Image: {}'.format(image_fname))
+        logger.info('Video: {}'.format(video_url))
 
         # Post to Facebook
         fb_api.put_object(
           parent_object=config.FB_PAGE_ID,
           connection_name="feed",
           message=caption,
-          source=media_url,
+          source=fb_media_url,
           link=post_url
         )
 
@@ -124,17 +124,16 @@ def main():
         # so use a smaller limit for safety
         max_len = 250
         short_url = shorten(post_url)
-        short_url_len = max(23, len(short_url)) # urls considered 23 chars
+        # short_url_len = max(23, len(short_url)) # urls considered 23 chars
         if len(caption) + len(short_url) + 1 > max_len:
             caption = caption[:(max_len - len(short_url) - 2)] + '…'
         caption = '{} {}'.format(caption, short_url)
-        media = tw_api.media_upload(fname)
+        media = tw_api.media_upload(image_fname)
         tw_api.update_status(status=caption, media_ids=[media.media_id])
 
         seen.add(id)
-
-    with open('seen.json', 'w') as f:
-        json.dump(list(seen), f)
+        with open('seen.json', 'w') as f:
+            json.dump(list(seen), f)
 
 
 if __name__ == '__main__':
